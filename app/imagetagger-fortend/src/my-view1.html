@@ -9,36 +9,102 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-layout/app-grid/app-grid-style.html">
+
 <link rel="import" href="shared-styles.html">
 
 <dom-module id="my-view1">
   <template>
-    <style include="shared-styles">
+    <style include="shared-styles app-grid-style">
       :host {
         display: block;
-
+        --app-grid-columns: 5;
+        --app-grid-expandible-item-columns: 4;
         padding: 10px;
+      }
+      #item{
+        @apply --app-grid-expandible-item;
       }
     </style>
 
-    <!--<div class="card">
-      <div class="circle">1</div>
-      <h1>View One</h1>
-      <p>Ut labores minimum atomorum pro. Laudem tibique ut has.</p>
-      <p>Lorem ipsum dolor sit amet, per in nusquam nominavi periculis, sit elit oportere ea.Lorem ipsum dolor sit amet, per in nusquam nominavi periculis, sit elit oportere ea.Cu mei vide viris gloriatur, at populo eripuit sit.</p>
-    </div>-->
-    <!--were the box is drawn-->
-    <!--<img src="https://www.newton.ac.uk/files/covers/968361.jpg" alt="Images to tag">-->
-    <canvas id="mcanvas">
-      
-    </canvas>
+    <div class="app-grid">
+        <div id="item" style="position: relative;">
+          <canvas id="mcanvas">
+            
+          </canvas>
+          <canvas id="mcanvas2" style="position:absolute; left: 0px;">
+            
+          </canvas>
+      </div>
+    </div>
   </template>
 
   <script>
     class MyView1 extends Polymer.Element {
       static get is() { return 'my-view1'; }
+      static get porperites(){
+        return{
+          userDrag:{
+            type:Boolean,
+            value:false
+          },
+          mouseDownStart:{
+            type:Object,
+            value:{}
+          },
+          imageCordinates:{
+            type:Object,
+            value:{}
+          }
+        };
+      }
       ready(){
-        console.log("I'm ready");
+        super.ready();
+        this._loadImageFromUrl();
+        this.$.mcanvas2.addEventListener('mousedown',e => this._mouseDownListner(e));
+        //if the mouse moves and the mousedown draw update
+        this.$.mcanvas2.addEventListener('mousemove',e => this._mouseMoveListner(e));
+        this.$.mcanvas2.addEventListener('mouseup',e => this._mouseUpListner(e));
+      }
+      _loadImageFromUrl(){
+        var mcanvas = this.$.mcanvas;
+        let mcontext = mcanvas.getContext('2d');
+        let base_image = new Image();
+        base_image.src = "https://www.newton.ac.uk/files/covers/968361.jpg"
+        
+        
+        base_image.onload = () => {
+          this.$.mcanvas.height = base_image.height;
+          this.$.mcanvas.width = base_image.width;
+          mcontext.drawImage(base_image,0,0);
+          this.$.mcanvas2.height = base_image.height;
+          this.$.mcanvas2.width = base_image.width;
+          
+          
+        };
+      }
+      _mouseDownListner(e){
+        this.userDrag = true;
+        var xyLoc = {
+          x:e.offsetX,
+          y:e.offsetY
+        }
+        this.mouseDownStart = xyLoc;
+      }
+      _mouseMoveListner(e){
+        if(this.userDrag){
+          this.$.mcanvas2.getContext('2d').clearRect(0, 0, this.$.mcanvas2.width, this.$.mcanvas2.height);
+          this.$.mcanvas2.getContext('2d').strokeRect(this.mouseDownStart.x, this.mouseDownStart.y,e.offsetX - this.mouseDownStart.x ,e.offsetY - this.mouseDownStart.y);
+          this.imageCordinates = {
+            x:this.mouseDownStart.y,
+            y:this.mouseDownStart.y,
+            w:(e.offsetX - this.mouseDownStart.x),
+            h:(e.offsetY - this.mouseDownStart.y)
+          }
+        }
+      }
+      _mouseUpListner(e){
+        this.userDrag = false;
       }
     }
 
