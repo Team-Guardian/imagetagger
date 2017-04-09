@@ -9,6 +9,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+
 <link rel="import" href="../bower_components/app-layout/app-grid/app-grid-style.html">
 
 <link rel="import" href="shared-styles.html">
@@ -22,13 +26,31 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         --app-grid-expandible-item-columns: 4;
         padding: 10px;
       }
-      #item{
-        @apply --app-grid-expandible-item;
+      #url_paperInput{
+        width:500px;
       }
+      #load_image_paperButton{
+        display: inline-block;
+      }
+      /*#item{
+        @apply --app-grid-expandible-item;
+      }*/
     </style>
-
-    <div class="app-grid">
-        <div id="item" style="position: relative;">
+    
+    <iron-ajax
+       auto
+       url="https://gist.githubusercontent.com/Capdt/ef317f4540c8bbc94748f60acaeb13a4/raw/a8224b2c9f3e15228e36bbdbe5c95d949a366c90/imageNetNestFiles.txt"
+       handle-as="text"
+       on-response="handleResponse"></iron-ajax>
+    
+    <div style="width:100%;">
+        <div id="item" style="position: relative; width:inherit;">
+         <div>
+            <paper-input id="url_paperInput" label="Image Url"></paper-input>
+            <paper-button id="load_image_paperButton" raised on-tap="_loadImages">Load Images</paper-button>
+            <paper-button id="" raised on-tap="_loadPreviousImage">Previous</paper-button>
+            <paper-button id="" raised on-tap="_loadNextImage">Next Image</paper-button>          
+          </div> 
           <canvas id="mcanvas">
             
           </canvas>
@@ -55,10 +77,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           imageCordinates:{
             type:Object,
             value:{}
+          },
+          urls:{
+            type:Array,
+            value:[]
+          },
+          selectedUrl:{
+            type:String,
+            value:"",
+            reflectToAttribute:true,
+            observer:"_invalidateAndRedraw"
+          },
+          selectedUrlIndex:{
+            type:Number,
           }
         };
       }
       ready(){
+        this.selectedUrlIndex = 0;
         super.ready();
         this._loadImageFromUrl();
         this.$.mcanvas2.addEventListener('mousedown',e => this._mouseDownListner(e));
@@ -66,14 +102,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.$.mcanvas2.addEventListener('mousemove',e => this._mouseMoveListner(e));
         this.$.mcanvas2.addEventListener('mouseup',e => this._mouseUpListner(e));
       }
-      _loadImageFromUrl(){
+      _loadImageFromUrl(url="https://www.newton.ac.uk/files/covers/968361.jpg"){
         var mcanvas = this.$.mcanvas;
         let mcontext = mcanvas.getContext('2d');
         let base_image = new Image();
-        base_image.src = "https://www.newton.ac.uk/files/covers/968361.jpg"
+        //"https://www.newton.ac.uk/files/covers/968361.jpg"
+        base_image.src = url
         
         
         base_image.onload = () => {
+          // Clear the width and height of the rect
+          mcontext.clearRect(0, 0, this.$.mcanvas.width, this.$.mcanvas.height);
           this.$.mcanvas.height = base_image.height;
           this.$.mcanvas.width = base_image.width;
           mcontext.drawImage(base_image,0,0);
@@ -105,6 +144,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
       _mouseUpListner(e){
         this.userDrag = false;
+      }
+      _loadPreviousImage(){
+        this.selectedUrlIndex--;
+        this.selectedUrl = this.urls[this.selectedUrlIndex];
+      }
+      _loadNextImage(){
+        this.selectedUrlIndex++;
+        console.log(this.selectedUrlIndex);
+        this.selectedUrl = this.urls[this.selectedUrlIndex];
+        this._loadImageFromUrl(this.selectedUrl);
+      }
+      _invalidateAndRedraw(){
+        
+      }
+      handleResponse(data){
+        if(data.detail.status == 200){
+          this.urls = data.detail.response.split('\n');
+        }
       }
     }
 
