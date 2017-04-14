@@ -12,6 +12,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-swatch-picker/paper-swatch-picker.html">
+
 
 <link rel="import" href="../bower_components/app-layout/app-grid/app-grid-style.html">
 
@@ -28,9 +31,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
       #url_paperInput{
         width:500px;
+        margin-left: auto;
+        margin-right: auto;
       }
       #load_image_paperButton{
         display: inline-block;
+      }
+      #next_previous{
+        display: flex;
+      }
+      #next_image_paperButton{
+        margin-left: auto;
       }
       /*#item{
         @apply --app-grid-expandible-item;
@@ -38,25 +49,39 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </style>
     
     <iron-ajax
+       id="iron_ajax"
        auto
-       url="https://gist.githubusercontent.com/Capdt/ef317f4540c8bbc94748f60acaeb13a4/raw/a8224b2c9f3e15228e36bbdbe5c95d949a366c90/imageNetNestFiles.txt"
+       url=""
        handle-as="text"
        on-response="handleResponse"></iron-ajax>
+       <iron-ajax
+          id="iron_ajax1"
+          handle-as="json"
+          on-response="handleResponse"
+          debounce-duration="300"></iron-ajax>
     
     <div style="width:100%;">
         <div id="item" style="position: relative; width:inherit;">
          <div>
-            <paper-input id="url_paperInput" label="Image Url"></paper-input>
-            <paper-button id="load_image_paperButton" raised on-tap="_loadImages">Load Images</paper-button>
-            <paper-button id="" raised on-tap="_loadPreviousImage">Previous</paper-button>
-            <paper-button id="" raised on-tap="_loadNextImage">Next Image</paper-button>          
-          </div> 
-          <canvas id="mcanvas">
+           <div style="display:flex; justify-content: center;">
+             <div style=display:inline-flex;>
+                <paper-input id="url_paperInput" label="Image Url" value="https://gist.githubusercontent.com/dtoki/ef317f4540c8bbc94748f60acaeb13a4/raw/a8224b2c9f3e15228e36bbdbe5c95d949a366c90/imageNetNestFiles.txt"></paper-input>
+                <!--<paper-button id="load_image_paperButton" raised on-tap="_loadImages">Load Images</paper-button>-->
+                <paper-icon-button on-tap="_loadImage" style="margin-top:auto;" src="https://assets-cdn.github.com/images/modules/logos_page/Octocat.png" alt="octocat" title="octocat"></paper-icon-button>
+             </div>
+           </div>
+
             
-          </canvas>
-          <canvas id="mcanvas2" style="position:absolute; left: 0px;">
-            
-          </canvas>
+            <div id="next_previous">
+              <paper-button id="" raised on-tap="_loadPreviousImage">Previous</paper-button>
+              <paper-button id="next_image_paperButton" raised on-tap="_loadNextImage">Next Image</paper-button>
+            </div>        
+          </div>
+          
+          <div style="display:flex; justify-content: center; margin-top:30px;">
+            <canvas id="mcanvas"></canvas>
+            <canvas id="mcanvas2" style="position:absolute;"></canvas>
+          </div>
       </div>
     </div>
   </template>
@@ -74,9 +99,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type:Object,
             value:{}
           },
-          imageCordinates:{
+          postImageData:{
             type:Object,
-            value:{}
+            value:null
           },
           urls:{
             type:Array,
@@ -93,9 +118,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
         };
       }
+      _loadImage(){
+        console.log(this.$.url_paperInput.value);
+        this.$.iron_ajax.url=this.$.url_paperInput.value;
+        this.$.url_paperInput.value = "";
+      }
       ready(){
         this.selectedUrlIndex = 0;
         super.ready();
+        //load default image form url
         this._loadImageFromUrl();
         this.$.mcanvas2.addEventListener('mousedown',e => this._mouseDownListner(e));
         //if the mouse moves and the mousedown draw update
@@ -132,9 +163,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
       _mouseMoveListner(e){
         if(this.userDrag){
-          this.$.mcanvas2.getContext('2d').clearRect(0, 0, this.$.mcanvas2.width, this.$.mcanvas2.height);
-          this.$.mcanvas2.getContext('2d').strokeRect(this.mouseDownStart.x, this.mouseDownStart.y,e.offsetX - this.mouseDownStart.x ,e.offsetY - this.mouseDownStart.y);
-          this.imageCordinates = {
+          var ctx = this.$.mcanvas2.getContext('2d');
+          ctx.clearRect(0, 0, this.$.mcanvas2.width, this.$.mcanvas2.height);
+          ctx.strokeStyle="rgb(0,0,0)";
+          ctx.lineWidth=3;
+          ctx.fillStyle="rgba(255,255,255,0.2)";
+          ctx.fillRect(this.mouseDownStart.x, this.mouseDownStart.y,e.offsetX - this.mouseDownStart.x ,e.offsetY - this.mouseDownStart.y);
+          ctx.strokeRect(this.mouseDownStart.x, this.mouseDownStart.y,e.offsetX - this.mouseDownStart.x ,e.offsetY - this.mouseDownStart.y);
+          //ctx.fill();
+          this.postImageData = {
+            id:this.urls[this.selectedUrlIndex],
             x:this.mouseDownStart.y,
             y:this.mouseDownStart.y,
             w:(e.offsetX - this.mouseDownStart.x),
@@ -148,13 +186,37 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _loadPreviousImage(){
         this.selectedUrlIndex--;
         this.selectedUrl = this.urls[this.selectedUrlIndex];
-      }
-      _loadNextImage(){
-        this.selectedUrlIndex++;
-        console.log(this.selectedUrlIndex);
-        this.selectedUrl = this.urls[this.selectedUrlIndex];
         this._loadImageFromUrl(this.selectedUrl);
       }
+      _loadNextImage(){
+        if(this.postImageData!==undefined){
+          this._postImage()
+            .then((res)=>{
+              this.postImageData = undefined;
+              this.selectedUrlIndex++;
+              this.selectedUrl = this.urls[this.selectedUrlIndex];
+              this._loadImageFromUrl(this.selectedUrl);
+            })
+            .catch((err)=>{
+              this.postImageData = undefined;
+              console.log(err);
+            })
+        }
+      }
+
+      _postImage(){
+        return new Promise((resolve, reject)=>{
+          //console.log(this.postImageData);
+           var xhr = new XMLHttpRequest();
+           xhr.open('POST',"http://localhost:8080//api/targets",true);
+           xhr.setRequestHeader('Content-Type', 'application/json');
+           xhr.send(this.postImageData);
+           xhr.onload = ()=>{
+              resolve();
+           }
+        });
+      }
+      
       _invalidateAndRedraw(){
         
       }
