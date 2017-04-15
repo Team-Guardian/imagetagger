@@ -6,7 +6,7 @@ const
     
 const app = express();
 
-app.use('/static', express.static(path.join(__dirname, 'public')))
+app.use(express.static(path.join(__dirname, '../imagetagger-fortend/build/default')));
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
