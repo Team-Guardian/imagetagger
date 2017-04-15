@@ -121,26 +121,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _loadImage(){
         console.log(this.$.url_paperInput.value);
         this.$.iron_ajax.url=this.$.url_paperInput.value;
-        this.$.url_paperInput.value = "";
       }
       ready(){
         this.selectedUrlIndex = 0;
         super.ready();
         //load default image form url
-        this._loadImageFromUrl();
+        //this._loadImageFromUrl();
         this.$.mcanvas2.addEventListener('mousedown',e => this._mouseDownListner(e));
         //if the mouse moves and the mousedown draw update
         this.$.mcanvas2.addEventListener('mousemove',e => this._mouseMoveListner(e));
         this.$.mcanvas2.addEventListener('mouseup',e => this._mouseUpListner(e));
       }
-      _loadImageFromUrl(url="https://www.newton.ac.uk/files/covers/968361.jpg"){
+      _loadImageFromUrl(url){
         var mcanvas = this.$.mcanvas;
         let mcontext = mcanvas.getContext('2d');
         let base_image = new Image();
         //"https://www.newton.ac.uk/files/covers/968361.jpg"
         base_image.src = url
-        
-        
         base_image.onload = () => {
           // Clear the width and height of the rect
           mcontext.clearRect(0, 0, this.$.mcanvas.width, this.$.mcanvas.height);
@@ -184,6 +181,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.userDrag = false;
       }
       _loadPreviousImage(){
+        this.postImageData = undefined;
         this.selectedUrlIndex--;
         this.selectedUrl = this.urls[this.selectedUrlIndex];
         this._loadImageFromUrl(this.selectedUrl);
@@ -201,6 +199,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this.postImageData = undefined;
               console.log(err);
             })
+        }else{
+            this.postImageData = undefined;
+            this.selectedUrlIndex++;
+            this.selectedUrl = this.urls[this.selectedUrlIndex];
+            this._loadImageFromUrl(this.selectedUrl);
         }
       }
 
@@ -223,6 +226,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       handleResponse(data){
         if(data.detail.status == 200){
           this.urls = data.detail.response.split('\n');
+          this.selectedUrlIndex = 0;
+          this._loadImageFromUrl(this.urls[this.selectedUrlIndex]);
         }
       }
     }
