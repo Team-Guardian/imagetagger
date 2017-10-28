@@ -11,8 +11,8 @@ app.use(express.static(path.join(__dirname, '../imagetagger-frontend/build/defau
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-mongoose.connect('mongodb://localhost/imagetagger');
-require('./models/Target');
+// mongoose.connect('mongodb://localhost/imagetagger');
+// require('./models/Target');
 
 const routes = require('./routes');
 app.use('/', routes);
